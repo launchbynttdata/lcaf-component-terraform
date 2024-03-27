@@ -53,7 +53,7 @@ go/test/environment/aws:
 
 .PHONY: go/test/environment/gcp
 go/test/environment/gcp:
-	@echo "No environment configuration for GCP is defined.""
+	@echo "No environment configuration for GCP is defined."
 
 # Performs any environmental setup required for a cloud provider based on the name of the repository.
 .PHONY: go/test/environment
