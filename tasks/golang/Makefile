@@ -17,6 +17,11 @@ TEST_RUN_ONLY_READONLY = #intentionally empty
 TEST_RUN_EXCLUDE_READONLY = -v
 GOLANGCI_LINT_CONFIG ?= .golangci.yaml
 DISABLE_MAKE_CHECK_LINT ?= false
+CURRENT_DIR = $(notdir $(shell pwd))
+
+# If ARM_SUBSCRIPTION_ID is not already set by the environment, we'll try to use the `az` command 
+# to retrieve it. If `az` isn't found, we'll silently continue here and catch that case elsewhere.
+export ARM_SUBSCRIPTION_ID ?= $(shell command -v az >/dev/null 2>&1 && az account show | jq -r .id)
 
 # Functions
 
@@ -34,6 +39,35 @@ define go_test
 endef
 
 # Tasks
+.PHONY: go/test/environment/az
+go/test/environment/az:
+ifeq (,$(ARM_SUBSCRIPTION_ID))
+	$(error "ARM_SUBSCRIPTION_ID was not set and `az` was not found in your PATH.")
+else
+	@echo "Terratest will use Azure Subscription ID $$ARM_SUBSCRIPTION_ID"
+endif
+
+.PHONY: go/test/environment/aws
+go/test/environment/aws:
+	@echo "No environment configuration for AWS is defined."
+
+.PHONY: go/test/environment/gcp
+go/test/environment/gcp:
+	@echo "No environment configuration for GCP is defined."
+
+# Performs any environmental setup required for a cloud provider based on the name of the repository.
+.PHONY: go/test/environment
+go/test/environment:
+ifneq (,$(findstring tf-aws,$(CURRENT_DIR)))
+	$(MAKE) go/test/environment/aws
+else ifneq (,$(findstring tf-az,$(CURRENT_DIR)))
+	$(MAKE) go/test/environment/az
+else ifneq (,$(findstring tf-gcp,$(CURRENT_DIR)))
+	$(MAKE) go/test/environment/gcp
+else
+	@echo "Unrecognized module type, no environmental setup will be performed."
+endif
+
 
 .PHONY: go/list
 go/list :
@@ -45,7 +79,7 @@ go/lint :
 	$(foreach test_dir,$(GO_TEST_DIRECTORIES),$(call go_lint,$(test_dir)))
 
 .PHONY: go/test
-go/test :
+go/test : go/test/environment
 	$(foreach test_dir,$(GO_TEST_DIRECTORIES),$(call go_test,$(test_dir),$(TEST_RUN_EXCLUDE_READONLY)))
 
 go/readonly_test:
