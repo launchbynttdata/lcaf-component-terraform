@@ -68,8 +68,12 @@ define aws_provider
 provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n
 endef
 
-define azure_provider
-provider \"azurerm\" {\n  skip_provider_registration = true\n  features {\n    resource_group {\n      prevent_deletion_if_contains_resources = false\n    }\n  }\n}\n\nprovider \"azuredevops\" {}\n
+define azurerm_provider
+provider \"azurerm\" {\n  skip_provider_registration = true\n  features {\n    resource_group {\n      prevent_deletion_if_contains_resources = false\n    }\n  }\n}\n
+endef
+
+define azureado_provider
+provider \"azuredevops\" {}\n
 endef
 
 define provider_file_path
@@ -79,7 +83,8 @@ endef
 define create_example_providers
 	$(eval PROVIDER_FILE_PATH:=$(call provider_file_path,$(1)))
 	$(if $(findstring aws,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call aws_provider,$(AWS_REGION),$(AWS_PROFILE))"' > $(1)/provider.tf,)
-	$(if $(findstring azure,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call azure_provider)"' > $(1)/provider.tf,)
+	$(if $(findstring azurerm,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call azurerm_provider)"' > $(1)/provider.tf,)
+	$(if $(findstring azureado,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call azureado_provider)"' > $(1)/provider.tf,)
 endef
 
 define plan_terraform_module
