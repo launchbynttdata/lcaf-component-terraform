@@ -29,7 +29,7 @@ export ARM_SUBSCRIPTION_ID ?= $(shell command -v az >/dev/null 2>&1 && az accoun
 # Checks for Go files in the GO_TEST_DIRECTORIES. If they exist, runs the default configuration for golangci-lint
 # https://golangci-lint.run/usage/quick-start/
 define go_lint
-	$(FIND) $(1)/ -name '*.go' | $(GREP) -q '\.go' || exit 0; $(GOLANGCI_LINT) run -c $(GOLANGCI_LINT_CONFIG) -timeout=$(GO_LINT_TIMEOUT) -v ./$(1)/...;
+	$(FIND) $(1)/ -name '*.go' | $(GREP) -q '\.go' || exit 0; $(GOLANGCI_LINT) run -c $(GOLANGCI_LINT_CONFIG) --timeout $(GO_LINT_TIMEOUT) -v ./$(1)/...;
 
 endef
 
