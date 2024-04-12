@@ -178,6 +178,9 @@ tfmodule/create_example_providers:
 .PHONY: lint
 lint::
 	$(MAKE) tfmodule/lint
+
+.PHONY: check
+check::
 	$(MAKE) tfmodule/clone_custom_rules
 	$(MAKE) tfmodule/create_example_providers
 	$(MAKE) tfmodule/plan
