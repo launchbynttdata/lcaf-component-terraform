@@ -65,7 +65,7 @@ define list_examples
 endef
 
 define aws_provider
-provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n\nprovider \"aws\" {\n  alias   = \"global\"\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n
+provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n\nprovider \"aws\" {\n  alias   = \"global\"\n  region  = \"us-east-1\"\n  profile = \"$(2)\"\n}\n
 endef
 
 define azurerm_provider
@@ -173,6 +173,7 @@ endif
 
 .PHONY: tfmodule/create_example_providers
 tfmodule/create_example_providers:
+	@$(call create_example_providers,.)
 	@$(foreach example,$(ALL_EXAMPLES),$(call create_example_providers,$(example)))
 
 .PHONY: lint
