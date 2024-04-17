@@ -65,7 +65,7 @@ define list_examples
 endef
 
 define aws_provider
-provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n
+provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n\nprovider \"aws\" {\n  alias   = \"global\"\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n
 endef
 
 define azurerm_provider
