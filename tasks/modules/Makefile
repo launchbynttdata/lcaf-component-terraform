@@ -65,14 +65,18 @@ define list_examples
 endef
 
 define aws_provider
-provider \"aws\" {\n  region  = \"$(1)\"\n  profile = \"$(2)\"\n}\n\nprovider \"aws\" {\n  alias   = \"global\"\n  region  = \"us-east-1\"\n  profile = \"$(2)\"\n}\n
+provider \"aws\" {\n  region  = \"$(AWS_REGION)\"\n  profile = \"$(AWS_PROFILE)\"\n}\n\nprovider \"aws\" {\n  alias   = \"global\"\n  region  = \"us-east-1\"\n  profile = \"$(AWS_PROFILE)\"\n}\n
 endef
 
 define azurerm_provider
 provider \"azurerm\" {\n  skip_provider_registration = true\n  features {\n    resource_group {\n      prevent_deletion_if_contains_resources = false\n    }\n  }\n}\n
 endef
 
-define azureado_provider
+define azapi_provider
+provider \"azapi\" {\n  use_cli = true\n  use_msi = false\n}\n
+endef
+
+define azuredevops_provider
 provider \"azuredevops\" {}\n
 endef
 
@@ -80,11 +84,16 @@ define provider_file_path
 $(1)/provider.tf
 endef
 
+define add_provider_details
+	$(if $(findstring hashicorp/aws,$(2)),grep -q "aws" $(1) || bash -c 'echo -e "$(call aws_provider)"' >> $(1),)
+	$(if $(findstring azure/azapi,$(2)),grep -q "azapi" $(1) || bash -c 'echo -e "$(call azapi_provider)"' >> $(1),)
+	$(if $(findstring microsoft/azuredevops,$(2)),grep -q "azuredevops" $(1) || bash -c 'echo -e "$(call azuredevops_provider)"' >> $(1),)
+	$(if $(findstring hashicorp/azurerm,$(2)),grep -q "azurerm" $(1) || bash -c 'echo -e "$(call azurerm_provider)"' >> $(1),)
+endef
+
 define create_example_providers
 	$(eval PROVIDER_FILE_PATH:=$(call provider_file_path,$(1)))
-	$(if $(findstring aws,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call aws_provider,$(AWS_REGION),$(AWS_PROFILE))"' > $(1)/provider.tf,)
-	$(if $(findstring azurerm,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call azurerm_provider)"' > $(1)/provider.tf,)
-	$(if $(findstring azureado,$(CURRENT_DIR)), [ -e $(PROVIDER_FILE_PATH) ] || bash -c 'echo -e "$(call azureado_provider)"' > $(1)/provider.tf,)
+	$(foreach PROVIDER,$(shell terraform providers | sed -re 's/.+\[(.+\/.+\/.+)\].+/\1/g' | grep registry | sort | uniq),$(call add_provider_details,$(PROVIDER_FILE_PATH),$(PROVIDER)))
 endef
 
 define plan_terraform_module
