@@ -106,7 +106,7 @@ endef
 
 define tflint_terraform_module
 	echo && echo "Linting $(1) ...";
-	(cd $(1) && TF_LOG=info $(TFLINT) -c $(TFLINT_CONFIG)) || exit 1;
+	(cd $(1) && TF_LOG=info $(TFLINT) -c $(TFLINT_CONFIG) || TF_LOG=info $(TFLINT) -c ../../$(TFLINT_CONFIG)) || exit 1;
 
 endef
 
