@@ -187,6 +187,7 @@ tfmodule/create_example_providers:
 
 .PHONY: lint
 lint::
+	$(MAKE) tfmodule/create_example_providers
 	$(MAKE) tfmodule/lint
 
 .PHONY: test
