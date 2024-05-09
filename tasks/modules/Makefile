@@ -182,7 +182,7 @@ endif
 
 .PHONY: tfmodule/create_example_providers
 tfmodule/create_example_providers:
-	@$(call create_example_providers,.)
+	@$(if $(findstring aws.global,$(shell grep -se "\\s*provider\\s*=" *.tf || true)),$(call create_example_providers,.),)
 	@$(foreach example,$(ALL_EXAMPLES),$(call create_example_providers,$(example)))
 
 .PHONY: lint
