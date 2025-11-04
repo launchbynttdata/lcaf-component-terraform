@@ -98,7 +98,13 @@ endef
 
 define plan_terraform_module
 	echo && echo "Planning $(1) ...";
-	$(TERRAFORM) -chdir=$(1) plan -input=false -out=terraform.tfplan -var-file $(VAR_FILE);
+	if [ -f "$(1)/$(VAR_FILE)" ]; then \
+		echo "Using $(VAR_FILE) for variable inputs"; \
+		$(TERRAFORM) -chdir=$(1) plan -input=false -out=terraform.tfplan -var-file $(VAR_FILE); \
+	else \
+		echo "$(VAR_FILE) doesn't exist, falling back to default (terraform.tfvars)"; \
+		$(TERRAFORM) -chdir=$(1) plan -input=false -out=terraform.tfplan; \
+	fi;
 	echo && echo "Creating JSON plan output for $(1) ...";
 	cd $(1) && $(TERRAFORM) show -json ./terraform.tfplan > ./terraform.tfplan.json;
 
