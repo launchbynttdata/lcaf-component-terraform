@@ -3,4 +3,3 @@ run:
   # Timeout for analysis, e.g. 30s, 5m.
   timeout: 5m
   allow-parallel-runners: true
-  
