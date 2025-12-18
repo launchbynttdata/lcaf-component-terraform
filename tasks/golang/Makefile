@@ -54,16 +54,73 @@ export ARM_SUBSCRIPTION_ID ?= $(shell command -v az >/dev/null 2>&1 && az accoun
 # Functions
 ################################################################################
 
+# Helper function to convert time string to minutes for comparison
+# Supports: 30s (seconds), 15m (minutes), 2h (hours)
+# Returns numeric value in minutes for comparison
+define time_to_minutes
+$(shell \
+	TIME_STR="$(1)"; \
+	if echo "$$TIME_STR" | grep -q 'h$$'; then \
+		NUM=$$(echo "$$TIME_STR" | sed 's/h$$//'); \
+		echo "$$((NUM * 60))"; \
+	elif echo "$$TIME_STR" | grep -q 'm$$'; then \
+		echo "$$TIME_STR" | sed 's/m$$//';\
+	elif echo "$$TIME_STR" | grep -q 's$$'; then \
+		NUM=$$(echo "$$TIME_STR" | sed 's/s$$//'); \
+		echo "$$((NUM / 60))"; \
+	else \
+		echo "0"; \
+	fi 2>/dev/null || echo "0" \
+)
+endef
+
+# Determine if --timeout flag should be used based on config file comparison
+# Returns timeout value only if it needs to override the config file (ENV > config)
+# Returns empty string if config file should handle timeout (config >= ENV)
+# If no config file, always returns timeout value
+# Arguments: $(1) - config file path
+define should_override_timeout
+$(shell \
+	if [ -f "$(1)" ]; then \
+		CONFIG_TIMEOUT=$$(grep -E '^[[:space:]]*timeout:' "$(1)" | sed 's/.*timeout:[[:space:]]*//' | sed 's/["'\''\`]//g' | tr -d ' ' 2>/dev/null); \
+		if [ -n "$$CONFIG_TIMEOUT" ]; then \
+			CONFIG_MINS=$$($(MAKE) --no-print-directory time_to_minutes TIME_STR="$$CONFIG_TIMEOUT" 2>/dev/null || echo "0"); \
+			ENV_MINS=$$($(MAKE) --no-print-directory time_to_minutes TIME_STR="$(GO_LINT_TIMEOUT)" 2>/dev/null || echo "0"); \
+			if [ "$$ENV_MINS" -gt "$$CONFIG_MINS" ] 2>/dev/null; then \
+				echo "$(GO_LINT_TIMEOUT)"; \
+			fi; \
+		else \
+			echo "$(GO_LINT_TIMEOUT)"; \
+		fi; \
+	else \
+		echo "$(GO_LINT_TIMEOUT)"; \
+	fi \
+)
+endef
+
 # Runs golangci-lint on a directory if Go files exist
 # Uses only configurable variables - no hard-coded values
+# Smart timeout resolution:
+#   - If config file exists with timeout >= GO_LINT_TIMEOUT: use config file (no --timeout flag)
+#   - If config file exists but GO_LINT_TIMEOUT > config timeout: override with --timeout flag
+#   - If no config file or no timeout in config: use --timeout flag with GO_LINT_TIMEOUT
 # Arguments:
 #   $(1) - Directory to lint (e.g., "tests")
-# https://golangci-lint.run/usage/quick-start/
+# https://golangci-lint.run/docs/configuration/ notes that configuration file variables are overridden by CLI flags
 define go_lint
 	@if $(FIND) $(1)/ -name '*.go' 2>/dev/null | $(GREP) -q '\.go'; then \
 		echo "Running golangci-lint on ./$(1)/..."; \
+		OVERRIDE_TIMEOUT="$(call should_override_timeout,$(GO_LINT_CONFIG))"; \
+		if [ -n "$$OVERRIDE_TIMEOUT" ]; then \
+			echo "Overriding config timeout with: $$OVERRIDE_TIMEOUT"; \
+		elif [ -f "$(GO_LINT_CONFIG)" ]; then \
+			CONFIG_TIMEOUT=$$(grep -E '^[[:space:]]*timeout:' "$(GO_LINT_CONFIG)" | sed 's/.*timeout:[[:space:]]*//' | tr -d ' "'\''\`' 2>/dev/null); \
+			if [ -n "$$CONFIG_TIMEOUT" ]; then \
+				echo "Using config file timeout: $$CONFIG_TIMEOUT"; \
+			fi; \
+		fi; \
 		$(GOLANGCI_LINT) run \
-			$$(test -n "$(GO_LINT_TIMEOUT)" && echo "--timeout $(GO_LINT_TIMEOUT)") \
+			$$(test -n "$$OVERRIDE_TIMEOUT" && echo "--timeout $$OVERRIDE_TIMEOUT") \
 			$$(test -f "$(GO_LINT_CONFIG)" && echo "-c $(GO_LINT_CONFIG)") \
 			$(GO_LINT_VERBOSE) \
 			$(GO_LINT_EXTRA_FLAGS) \
@@ -169,6 +226,21 @@ else
 	@echo "Unrecognized module type, no environmental setup will be performed."
 endif
 
+
+# Internal helper target for time conversion (used by functions)
+.PHONY: time_to_minutes
+time_to_minutes:
+	@if echo "$(TIME_STR)" | grep -q 'h$$'; then \
+		NUM=$$(echo "$(TIME_STR)" | sed 's/h$$//'); \
+		echo "$$((NUM * 60))"; \
+	elif echo "$(TIME_STR)" | grep -q 'm$$'; then \
+		echo "$(TIME_STR)" | sed 's/m$$//';\
+	elif echo "$(TIME_STR)" | grep -q 's$$'; then \
+		NUM=$$(echo "$(TIME_STR)" | sed 's/s$$//'); \
+		echo "$$((NUM / 60))"; \
+	else \
+		echo "0"; \
+	fi
 
 .PHONY: go/list
 go/list :

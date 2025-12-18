@@ -37,7 +37,7 @@ REPO_BRANCH ?= refs/tags/1.0.0
 # Path to seed manifest in repository referenced in REPO_MANIFESTS_URL
 REPO_MANIFEST ?= manifests/terraform_modules/seed/manifest.xml
 
-# Settings to pull in Nexient version of (google) repo utility that supports environment substitution
+# Settings to pull in standard version of (google) repo utility that supports environment substitution
 REPO_URL ?= https://github.com/launchbynttdata/git-repo.git
 
 # Branch of the repository referenced by REPO_URL to use
