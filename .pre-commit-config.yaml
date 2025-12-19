@@ -25,27 +25,6 @@ repos:
       - id: mixed-line-ending
         args:
           - --fix=auto
-  # - repo: https://github.com/antonbabenko/pre-commit-terraform
-  #   rev: v1.104.0
-  #   hooks:
-  #     - id: terraform_fmt
-  #     - id: terraform_validate
-  #     - id: terraform_docs
-  #       args:
-  #         - --hook-config=--path-to-file=README.md
-  #         - --hook-config=--add-to-existing-file=true
-  #         - --hook-config=--create-file-if-not-exist=true
-  #         - --args=--sort=false
-  # - repo: https://github.com/golangci/golangci-lint
-  #   rev: v2.7.2
-  #   hooks:
-  #     - id: golangci-lint
-  #       name: golangci-lint
-  #       description: Fast linters runner for Go.
-  #       entry: golangci-lint run --fix
-  #       types: [go]
-  #       language: golang
-  #       pass_filenames: false
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.23.0
     hooks:
