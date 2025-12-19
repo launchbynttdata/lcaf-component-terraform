@@ -1,6 +1,5 @@
 version: "2"
 run:
-  # Timeout for analysis, e.g. 30s, 5m.
-  timeout: 5m
+  # Timeout for analysis, e.g. 30s, 5m. - default as 15 min as set in the Makefile this is used in
+  timeout: 15m
   allow-parallel-runners: true
-  
